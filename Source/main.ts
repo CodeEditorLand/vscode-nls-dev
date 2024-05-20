@@ -156,7 +156,6 @@ export function bundleMetaDataFiles(id: string, outDir: string): ThroughStream {
 				contents: new Buffer(JSON.stringify(content), 'utf8')
 			}));
 		}
-
 		this.queue(null);
 	});
 }
@@ -249,7 +248,6 @@ export function bundleLanguageFiles(): ThroughStream {
 			});
 			this.queue(file);
 		}
-
 		this.queue(null);
 	});
 }
@@ -299,7 +297,6 @@ export function createKeyValuePairFile(commentSeparator: string | undefined = un
 			this.emit('error', `Failed to read JavaScript message bundle file: ${file.relative}`);
 			return;
 		}
-
 		this.queue(file);
 		if (kvpFile) {
 			this.queue(kvpFile);
@@ -581,7 +578,6 @@ export function createXlfFiles(projectName: string, extensionName: string): Thro
 			});
 			this.queue(xlfFile);
 		}
-
 		this.queue(null);
 	});
 }
