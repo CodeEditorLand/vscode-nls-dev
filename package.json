@@ -1,6 +1,14 @@
 {
+	"name": "vscode-nls-dev",
+	"description": "Development time npm module to generate strings bundles from Javascript files",
+	"main": "./lib/main.js",
+	"typings": "./lib/main",
 	"bin": {
 		"vscl": "./lib/vscl.js"
+	},
+	"scripts": {
+		"compile": "tsc -p ./src",
+		"prepublishOnly": "rimraf lib && npm run compile && npm test"
 	},
 	"dependencies": {
 		"ansi-colors": "4.1.1",
@@ -15,7 +23,6 @@
 		"xml2js": "0.5.0",
 		"yargs": "17.3.0"
 	},
-	"description": "Development time npm module to generate strings bundles from Javascript files",
 	"devDependencies": {
 		"@types/ansi-colors": "3.2.2",
 		"@types/clone": "2.1.0",
@@ -30,12 +37,5 @@
 		"@types/xml2js": "0.4.2",
 		"@types/yargs": "17.0.7",
 		"rimraf": "3.0.2"
-	},
-	"main": "./lib/main.js",
-	"name": "vscode-nls-dev",
-	"scripts": {
-		"compile": "tsc -p ./src",
-		"prepublishOnly": "rimraf lib && npm run compile && npm test"
-	},
-	"typings": "./lib/main"
+	}
 }
