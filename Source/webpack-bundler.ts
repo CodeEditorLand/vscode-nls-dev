@@ -3,19 +3,19 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-'use strict';
+"use strict";
 
-import * as webpack from 'webpack';
-import { MetaDataBundler } from './lib';
+import * as webpack from "webpack";
+
+import { MetaDataBundler } from "./lib";
 
 export class NLSBundlePlugin {
-
-	constructor(private id: string) { }
+	constructor(private id: string) {}
 
 	apply(compiler: webpack.Compiler): void {
-		compiler.hooks.emit.tap('NLSBundlePlugin', (compilation: any) => {
+		compiler.hooks.emit.tap("NLSBundlePlugin", (compilation: any) => {
 			const assets: any = {};
-			const bundler = new MetaDataBundler(this.id, 'dist');
+			const bundler = new MetaDataBundler(this.id, "dist");
 
 			for (const name of Object.keys(compilation.assets)) {
 				if (!/nls\.metadata\.json$/.test(name)) {
@@ -23,7 +23,9 @@ export class NLSBundlePlugin {
 					continue;
 				}
 
-				const json = JSON.parse(compilation.assets[name].source().toString('utf8'));
+				const json = JSON.parse(
+					compilation.assets[name].source().toString("utf8"),
+				);
 				bundler.add(json);
 			}
 
@@ -36,14 +38,22 @@ export class NLSBundlePlugin {
 			const rawHeader = JSON.stringify(header);
 			const rawContent = JSON.stringify(content);
 
-			assets['nls.metadata.header.json'] = {
-				source() { return rawHeader; },
-				size() { return rawHeader.length; }
+			assets["nls.metadata.header.json"] = {
+				source() {
+					return rawHeader;
+				},
+				size() {
+					return rawHeader.length;
+				},
 			};
 
-			assets['nls.metadata.json'] = {
-				source() { return rawContent; },
-				size() { return rawContent.length; }
+			assets["nls.metadata.json"] = {
+				source() {
+					return rawContent;
+				},
+				size() {
+					return rawContent.length;
+				},
 			};
 
 			compilation.assets = assets;
