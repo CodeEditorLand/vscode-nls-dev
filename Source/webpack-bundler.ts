@@ -15,11 +15,13 @@ export class NLSBundlePlugin {
 	apply(compiler: webpack.Compiler): void {
 		compiler.hooks.emit.tap("NLSBundlePlugin", (compilation: any) => {
 			const assets: any = {};
+
 			const bundler = new MetaDataBundler(this.id, "dist");
 
 			for (const name of Object.keys(compilation.assets)) {
 				if (!/nls\.metadata\.json$/.test(name)) {
 					assets[name] = compilation.assets[name];
+
 					continue;
 				}
 
@@ -35,7 +37,9 @@ export class NLSBundlePlugin {
 			}
 
 			const [header, content] = bundler.bundle();
+
 			const rawHeader = JSON.stringify(header);
+
 			const rawContent = JSON.stringify(content);
 
 			assets["nls.metadata.header.json"] = {

@@ -35,11 +35,16 @@ class SingleFileServiceHost implements ts.LanguageServiceHost {
 	}
 
 	getCompilationSettings = () => this.options;
+
 	getScriptFileNames = () => [this.filename];
+
 	getScriptVersion = () => "1";
+
 	getScriptSnapshot = (name: string) =>
 		name === this.filename ? this.file : this.lib;
+
 	getCurrentDirectory = () => "";
+
 	getDefaultLibFileName = () => "lib.d.ts";
 	fileExists = () => true;
 	readFile = () => "";
@@ -63,6 +68,7 @@ export interface LocalizeInfo {
 export namespace LocalizeInfo {
 	export function is(value: any): value is LocalizeInfo {
 		const candidate = value as LocalizeInfo;
+
 		return (
 			candidate !== undefined &&
 			candidate.key !== undefined &&
@@ -90,6 +96,7 @@ export interface JavaScriptMessageBundle {
 export namespace JavaScriptMessageBundle {
 	export function is(value: any): value is JavaScriptMessageBundle {
 		let candidate = value as JavaScriptMessageBundle;
+
 		return (
 			candidate &&
 			candidate.messages !== undefined &&
@@ -107,6 +114,7 @@ export interface ResolvedJavaScriptMessageBundle {
 export namespace ResolvedJavaScriptMessageBundle {
 	export function is(value: any): value is ResolvedJavaScriptMessageBundle {
 		const candidate = value as ResolvedJavaScriptMessageBundle;
+
 		return (
 			candidate &&
 			candidate.keys !== undefined &&
@@ -124,6 +132,7 @@ export namespace ResolvedJavaScriptMessageBundle {
 			let translated = translatedMessages
 				? translatedMessages[key]
 				: undefined;
+
 			if (translated === undefined) {
 				if (translatedMessages) {
 					problems.push(`No localized message found for key ${key}`);
@@ -132,6 +141,7 @@ export namespace ResolvedJavaScriptMessageBundle {
 			}
 			result.push(translated);
 		});
+
 		return result;
 	}
 }
@@ -151,6 +161,7 @@ export namespace PackageJsonMessageBundle {
 			let message = translatedMessages
 				? translatedMessages[key]
 				: undefined;
+
 			if (message === undefined) {
 				if (translatedMessages) {
 					problems.push(`No localized message found for key ${key}`);
@@ -159,6 +170,7 @@ export namespace PackageJsonMessageBundle {
 			}
 			result[key] = message;
 		});
+
 		return result;
 	}
 }
@@ -195,7 +207,9 @@ class TextModel {
 		private rawSourceMap?: RawSourceMap,
 	) {
 		const regex = /\r\n|\r|\n/g;
+
 		let index = 0;
+
 		let match: RegExpExecArray | null;
 
 		this.lines = [];
@@ -221,7 +235,9 @@ class TextModel {
 			sourceMapConsumer.eachMapping(
 				(mapping) => {
 					// Note that the generatedLine index is one based;
+
 					let line = this.lines[mapping.generatedLine - 1];
+
 					if (line) {
 						if (!line.mappings) {
 							line.mappings = [];
@@ -251,15 +267,19 @@ class TextModel {
 
 		patches = patches.sort((a, b) => {
 			const lca = a.span.start;
+
 			const lcb = b.span.start;
+
 			return lca.line !== lcb.line
 				? lca.line - lcb.line
 				: lca.character - lcb.character;
 		});
 
 		let overlapping = false;
+
 		if (patches.length > 1) {
 			const previousSpan = patches[0].span;
+
 			for (let i = 1; i < patches.length; i++) {
 				const nextSpan = patches[i].span;
 
@@ -269,6 +289,7 @@ class TextModel {
 						previousSpan.end.character >= nextSpan.start.character)
 				) {
 					overlapping = true;
+
 					break;
 				}
 			}
@@ -277,6 +298,7 @@ class TextModel {
 			throw new Error(`Overlapping text edits generated.`);
 		}
 		const lastPatch = patches[patches.length - 1];
+
 		const lastLine = this.lines[this.lineCount - 1];
 
 		if (
@@ -293,9 +315,11 @@ class TextModel {
 		} = { line: -1, index: -1 };
 		patches.reverse().forEach((patch) => {
 			const startLineNumber = patch.span.start.line;
+
 			const endLineNumber = patch.span.end.line;
 
 			const startLine = this.lines[startLineNumber];
+
 			const endLine = this.lines[endLineNumber];
 
 			// Do the textual manipulations.
@@ -304,6 +328,7 @@ class TextModel {
 				patch.content,
 				endLine.content!.substring(patch.span.end.character),
 			].join("");
+
 			for (let i = startLineNumber + 1; i <= endLineNumber; i++) {
 				this.lines[i].content = null;
 			}
@@ -323,7 +348,9 @@ class TextModel {
 					let delta =
 						patch.content.length -
 						(patch.span.end.character - patch.span.start.character);
+
 					let mappingItem: MappingItem | null = null;
+
 					while (
 						(mappingItem =
 							mappingCursor.index !== -1
@@ -349,6 +376,7 @@ class TextModel {
 					}
 				} else {
 					let startLineMappings = startLine.mappings;
+
 					if (startLineMappings) {
 						for (
 							let i = startLineMappings.length - 1;
@@ -362,6 +390,7 @@ class TextModel {
 					}
 					for (let i = startLineNumber + 1; i < endLineNumber; i++) {
 						let line = this.lines[i];
+
 						if (line.mappings) {
 							line.mappings.forEach(
 								(mapping) => (mapping.delete = true),
@@ -369,11 +398,15 @@ class TextModel {
 						}
 					}
 					let endLineMappings = endLine.mappings;
+
 					if (endLineMappings) {
 						let lineDelta = startLineNumber - endLineNumber;
+
 						let index = 0;
+
 						for (; index < endLineMappings.length; index++) {
 							let mapping = endLineMappings[index];
+
 							if (
 								mapping.generatedColumn <
 								patch.span.end.character
@@ -404,14 +437,18 @@ class TextModel {
 		const sourceMapGenerator = new SourceMapGenerator({
 			sourceRoot: this.rawSourceMap.sourceRoot,
 		});
+
 		let lineDelta = 0;
 		this.lines.forEach((line) => {
 			const mappings = line.mappings;
+
 			let columnDelta = 0;
+
 			if (mappings) {
 				mappings.forEach((mapping) => {
 					lineDelta = (mapping.lineDelta || 0) + lineDelta;
 					columnDelta = (mapping.columnDelta || 0) + columnDelta;
+
 					if (mapping.delete) {
 						return;
 					}
@@ -430,14 +467,18 @@ class TextModel {
 				});
 			}
 		});
+
 		return sourceMapGenerator.toString();
 	}
 
 	public toString(): string {
 		let count = this.lineCount;
+
 		let buffer: string[] = [];
+
 		for (let i = 0; i < count; i++) {
 			let line = this.lines[i];
+
 			if (line.content) {
 				buffer.push(line.content + line.ending);
 			}
@@ -486,6 +527,7 @@ function analyze(
 		}
 
 		loop(node);
+
 		return result;
 	}
 
@@ -520,6 +562,7 @@ function analyze(
 			return false;
 		}
 		const argument = node.arguments[0];
+
 		return (
 			ts.isStringLiteralLike(argument) &&
 			vscodeRegExp.test(argument.getText())
@@ -531,13 +574,16 @@ function analyze(
 		textSpan: ts.TextSpan,
 	): ts.Node | undefined {
 		let textSpanEnd = textSpan.start + textSpan.length;
+
 		function loop(node: ts.Node): ts.Node | undefined {
 			const length = node.end - node.pos;
+
 			if (node.pos === textSpan.start && length === textSpan.length) {
 				return node;
 			}
 			if (node.pos <= textSpan.start && textSpanEnd <= node.end) {
 				const candidate = ts.forEachChild(node, loop);
+
 				return candidate || node;
 			}
 			return undefined;
@@ -558,14 +604,18 @@ function analyze(
 
 	function unescapeString(str: string): string {
 		const result: string[] = [];
+
 		for (let i = 0; i < str.length; i++) {
 			const ch = str.charAt(i);
+
 			if (ch === "\\") {
 				if (i + 1 < str.length) {
 					let replace = unescapeMap[str.charAt(i + 1)];
+
 					if (replace !== undefined) {
 						result.push(replace);
 						i++;
+
 						continue;
 					}
 				}
@@ -580,12 +630,17 @@ function analyze(
 	options.allowJs = true;
 
 	const filename = "file.js";
+
 	const serviceHost = new SingleFileServiceHost(options, filename, contents);
+
 	const service = ts.createLanguageService(serviceHost);
+
 	const sourceFile = service.getProgram()!.getSourceFile(filename)!;
 
 	const patches: Patch[] = [];
+
 	const errors: string[] = [];
+
 	const bundle: JavaScriptMessageBundle = { messages: [], keys: [] };
 
 	// all imports
@@ -600,6 +655,7 @@ function analyze(
 
 		if (ts.isCallExpression(node)) {
 			let parent = node.parent;
+
 			if (
 				ts.isCallExpression(parent) &&
 				ts.isIdentifier(parent.expression) &&
@@ -638,6 +694,7 @@ function analyze(
 						sourceFile,
 						reference.textSpan,
 					);
+
 					if (node) {
 						memo.push(node);
 					}
@@ -660,14 +717,18 @@ function analyze(
 				return memo;
 			}
 			const callExpression = node.parent.parent;
+
 			const expression = callExpression.expression;
+
 			if (ts.isPropertyAccessExpression(expression)) {
 				if (expression.name.text === "loadMessageBundle") {
 					// We have a load call like nls.loadMessageBundle();
 					memo.push(callExpression);
 				} else if (expression.name.text === "config") {
 					// We have a load call like nls.config({...})();
+
 					let parent = callExpression.parent;
+
 					if (
 						ts.isCallExpression(parent) &&
 						parent.expression === callExpression
@@ -684,15 +745,18 @@ function analyze(
 	const localizeCalls = loadCalls.reduce<ts.CallExpression[]>(
 		(memo, loadCall) => {
 			const parent = loadCall.parent;
+
 			if (ts.isCallExpression(parent)) {
 				// We have something like nls.config({...})()('key', 'message');
 				memo.push(parent);
 			} else if (ts.isVariableDeclaration(parent)) {
 				// We have something like var localize = nls.config({...})();
+
 				const references = service.getReferencesAtPosition(
 					filename,
 					parent.name.pos + 1,
 				);
+
 				if (references) {
 					references.forEach((reference) => {
 						if (!reference.isWriteAccess) {
@@ -700,9 +764,11 @@ function analyze(
 								sourceFile,
 								reference.textSpan,
 							);
+
 							if (node) {
 								if (ts.isIdentifier(node)) {
 									let parent = node.parent;
+
 									if (
 										ts.isCallExpression(parent) &&
 										parent.arguments.length >= 2
@@ -732,6 +798,7 @@ function analyze(
 	loadCalls.reduce((memo, loadCall) => {
 		if (loadCall.arguments.length === 0) {
 			const args = loadCall.arguments;
+
 			const dir = baseDir ? JSON.stringify(baseDir) : "__dirname";
 			patches.push({
 				span: {
@@ -753,27 +820,37 @@ function analyze(
 	localizeCalls.reduce(
 		(memo, localizeCall) => {
 			const firstArg = localizeCall.arguments[0];
+
 			const secondArg = localizeCall.arguments[1];
+
 			let key: string | null = null;
+
 			let message: string | null = null;
+
 			let comment: string[] = [];
+
 			let text: string | null = null;
+
 			if (ts.isStringLiteralLike(firstArg)) {
 				text = firstArg.getText();
 				key = text.substr(1, text.length - 2);
 			} else if (ts.isObjectLiteralExpression(firstArg)) {
 				for (let i = 0; i < firstArg.properties.length; i++) {
 					const property = firstArg.properties[i];
+
 					if (ts.isPropertyAssignment(property)) {
 						const name = property.name.getText();
+
 						if (name === "key") {
 							const initializer = property.initializer;
+
 							if (ts.isStringLiteralLike(initializer)) {
 								text = initializer.getText();
 								key = text.substr(1, text.length - 2);
 							}
 						} else if (name === "comment") {
 							const initializer = property.initializer;
+
 							if (ts.isArrayLiteralExpression(initializer)) {
 								initializer.elements.forEach((element) => {
 									if (ts.isStringLiteralLike(element)) {
@@ -796,6 +873,7 @@ function analyze(
 				errors.push(
 					`(${position.line + 1},${position.character + 1}): first argument of a localize call must either be a string literal or an object literal of type LocalizeInfo.`,
 				);
+
 				return memo;
 			}
 			if (ts.isStringLiteralLike(secondArg)) {
@@ -810,6 +888,7 @@ function analyze(
 				errors.push(
 					`(${position.line + 1},${position.character + 1}): second argument of a localize call must be a string literal.`,
 				);
+
 				return memo;
 			}
 			message = unescapeString(message);
@@ -840,6 +919,7 @@ function analyze(
 				content: "null",
 			});
 			bundle.messages.push(message);
+
 			if (comment.length > 0) {
 				bundle.keys.push({
 					key: key,
@@ -849,6 +929,7 @@ function analyze(
 				bundle.keys.push(key);
 			}
 			messageIndex++;
+
 			return memo;
 		},
 		{ patches },
@@ -873,6 +954,7 @@ export function processFile(
 	errors: string[];
 } {
 	const analysisResult = analyze(contents, relativeFileName, baseDir);
+
 	if (analysisResult.patches.length === 0) {
 		return {
 			contents: undefined,
@@ -882,6 +964,7 @@ export function processFile(
 		};
 	}
 	let rawSourceMap: RawSourceMap | undefined = undefined;
+
 	if (isString(sourceMap)) {
 		try {
 			rawSourceMap = JSON.parse(sourceMap);
@@ -910,6 +993,7 @@ function stripComments(content: string): string {
 	 */
 	var regexp: RegExp =
 		/("(?:[^\\\"]*(?:\\.)?)*")|('(?:[^\\\']*(?:\\.)?)*')|(\/\*(?:\r?\n|.)*?\*\/)|(\/{2,}.*?(?:(?:\r?\n)|$))/g;
+
 	let result = content.replace(regexp, (match, _m1, _m2, m3, m4) => {
 		// Only one of m1, m2, m3, m4 matches
 		if (m3) {
@@ -918,6 +1002,7 @@ function stripComments(content: string): string {
 		} else if (m4) {
 			// A line comment. If it ends in \r?\n then keep it.
 			let length = m4.length;
+
 			if (length > 2 && m4[length - 1] === "\n") {
 				return m4[length - 2] === "\r" ? "\r\n" : "\n";
 			} else {
@@ -928,6 +1013,7 @@ function stripComments(content: string): string {
 			return match;
 		}
 	});
+
 	return result;
 }
 
@@ -945,12 +1031,14 @@ export function resolveMessageBundle(
 			return null;
 		}
 		const keys: string[] = [];
+
 		const map: Map<string> = Object.create(null);
 		bundle.keys.forEach((key, index) => {
 			const resolvedKey = isString(key) ? key : key.key;
 			keys.push(resolvedKey);
 			map[resolvedKey] = bundle.messages[index];
 		});
+
 		return { messages: bundle.messages, keys: keys, map };
 	} else {
 		return bundle;
@@ -970,6 +1058,7 @@ export function createLocalizedMessages(
 	baseDir?: string,
 ): LocalizedMessagesResult {
 	const problems: string[] = [];
+
 	const i18nFile =
 		(baseDir
 			? path.join(i18nBaseDir, languageFolderName, baseDir, filename)
@@ -977,12 +1066,15 @@ export function createLocalizedMessages(
 		".i18n.json";
 
 	let messages: Map<string> | undefined;
+
 	let bundleLength = ResolvedJavaScriptMessageBundle.is(bundle)
 		? bundle.keys.length
 		: Object.keys(bundle).length;
+
 	if (fs.existsSync(i18nFile)) {
 		const content = stripComments(fs.readFileSync(i18nFile, "utf8"));
 		messages = JSON.parse(content) as Map<string>;
+
 		if (Object.keys(messages).length === 0) {
 			if (bundleLength > 0) {
 				problems.push(
@@ -1033,7 +1125,9 @@ export function bundle2keyValuePair(
 
 	for (var i = 0; i < bundle.messages.length; ++i) {
 		let key: string;
+
 		let comments: string[] | undefined;
+
 		let keyInfo = bundle.keys[i];
 
 		if (LocalizeInfo.is(keyInfo)) {
@@ -1127,10 +1221,14 @@ export class MetaDataBundler {
 		// system md5 shortens the name and therefore the path
 		// especially under Windows (max path issue).
 		const md5 = crypto.createHash("md5");
+
 		const keys = Object.keys(this.content).sort();
+
 		for (let key of keys) {
 			md5.update(key);
+
 			const entry: BundledMetaDataEntry = this.content[key];
+
 			for (const keyInfo of entry.keys) {
 				if (isString(keyInfo)) {
 					md5.update(keyInfo);
@@ -1143,6 +1241,7 @@ export class MetaDataBundler {
 			}
 		}
 		const hash = md5.digest("hex");
+
 		const header: BundledMetaDataHeader = {
 			id: this.id,
 			type: "extensionBundle",

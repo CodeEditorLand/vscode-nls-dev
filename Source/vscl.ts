@@ -38,8 +38,11 @@ const argv = yargs
 	.parseSync();
 
 let hasError: boolean = false;
+
 const outDir = argv.outDir ? path.resolve(argv.outDir) : null;
+
 const rootDir = argv.rootDir ? path.resolve(argv.rootDir) : null;
+
 const keepFilenames = Boolean(argv.keepFilenames);
 
 argv._.forEach((element) => {
@@ -50,19 +53,24 @@ argv._.forEach((element) => {
 		if (err) {
 			console.error(err.message);
 			hasError = true;
+
 			return;
 		}
 		matches.forEach((file) => {
 			const resolvedFile = path.resolve(file);
+
 			const contents: string = fs.readFileSync(resolvedFile, "utf8");
 
 			let sourceMapFile: string | null = null;
+
 			let resolvedSourceMapFile: string | null = null;
+
 			let sourceMapContent: string | undefined = undefined;
 
 			const sourceMapMatches = contents.match(
 				/\/\/#\s+sourceMappingURL=(.*)(?:\r?\n|\n|$)/,
 			);
+
 			if (sourceMapMatches && sourceMapMatches.length === 2) {
 				let sourceMapUrl = url.parse(sourceMapMatches[1]);
 				// For now we only support relative paths
@@ -73,6 +81,7 @@ argv._.forEach((element) => {
 					hasError = true;
 				}
 				const pathname = sourceMapUrl.pathname;
+
 				if (pathname) {
 					if (path.isAbsolute(pathname)) {
 						resolvedSourceMapFile = pathname;
@@ -99,6 +108,7 @@ argv._.forEach((element) => {
 				keepFilenames && rootDir
 					? path.relative(rootDir, resolvedFile)
 					: undefined;
+
 			const result = processFile(
 				contents,
 				relativeFilename,
@@ -113,7 +123,9 @@ argv._.forEach((element) => {
 				hasError = true;
 			} else {
 				let outFile = resolvedFile;
+
 				let sourceMapOutFile = resolvedSourceMapFile;
+
 				if (outDir) {
 					if (
 						rootDir &&
@@ -132,6 +144,7 @@ argv._.forEach((element) => {
 				}
 				if (result.contents) {
 					const dirname = path.dirname(outFile);
+
 					if (!fs.existsSync(dirname)) {
 						fs.mkdirSync(path.dirname(outFile));
 					}
@@ -146,6 +159,7 @@ argv._.forEach((element) => {
 				}
 				if (result.bundle) {
 					const extension = path.extname(outFile);
+
 					const bundledFile =
 						outFile.substr(0, outFile.length - extension.length) +
 						".nls.json";

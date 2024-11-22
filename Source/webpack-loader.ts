@@ -20,7 +20,9 @@ module.exports = function (this: any, content: any, map: any, meta: any) {
 	);
 
 	const callback = this.async();
+
 	const relativePath = relative(this.query.base, this.resourcePath);
+
 	const result = processFile(
 		content,
 		relativePath,
@@ -31,12 +33,15 @@ module.exports = function (this: any, content: any, map: any, meta: any) {
 	if (result.errors && result.errors.length > 0) {
 		// error
 		callback(new Error(result.errors.join()));
+
 		return;
 	}
 
 	if (result.bundle) {
 		const ext = path.extname(relativePath);
+
 		const base = relativePath.substr(0, relativePath.length - ext.length);
+
 		const metaDataContent = {
 			...result.bundle,
 			filePath: removePathPrefix(base, this.query.base),
