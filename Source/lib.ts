@@ -1020,9 +1020,11 @@ function stripComments(content: string): string {
 export function resolveMessageBundle(
 	bundle: JavaScriptMessageBundle,
 ): ResolvedJavaScriptMessageBundle;
+
 export function resolveMessageBundle(
 	bundle: PackageJsonMessageBundle,
 ): PackageJsonMessageBundle;
+
 export function resolveMessageBundle(
 	bundle: JavaScriptMessageBundle | PackageJsonMessageBundle,
 ): ResolvedJavaScriptMessageBundle | PackageJsonMessageBundle | null {
@@ -1046,7 +1048,7 @@ export function resolveMessageBundle(
 }
 
 export interface LocalizedMessagesResult {
-	messages: string[] | Map<String>;
+	messages: string[] | Map<string>;
 	problems: string[];
 }
 
