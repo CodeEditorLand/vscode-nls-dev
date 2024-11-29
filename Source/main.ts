@@ -51,6 +51,7 @@ export function rewriteLocalizeCalls(): ThroughStream {
 
 			return;
 		}
+
 		const buffer: Buffer = file.contents as Buffer;
 
 		const content = buffer.toString("utf8");
@@ -67,6 +68,7 @@ export function rewriteLocalizeCalls(): ThroughStream {
 			result.errors.forEach((error) =>
 				console.error(`${file.relative}${error}`),
 			);
+
 			this.emit("error", `Failed to rewrite file: ${file.path}`);
 
 			return;
@@ -74,9 +76,11 @@ export function rewriteLocalizeCalls(): ThroughStream {
 			if (result.contents) {
 				file.contents = new Buffer(result.contents, "utf8");
 			}
+
 			if (result.sourceMap) {
 				file.sourceMap = JSON.parse(result.sourceMap);
 			}
+
 			if (result.bundle) {
 				let ext = path.extname(file.path);
 
@@ -84,6 +88,7 @@ export function rewriteLocalizeCalls(): ThroughStream {
 					0,
 					file.path.length - ext.length,
 				);
+
 				messagesFile = new File({
 					base: file.base,
 					path: filePath + NLS_JSON,
@@ -98,6 +103,7 @@ export function rewriteLocalizeCalls(): ThroughStream {
 					result.bundle,
 					{ filePath: removePathPrefix(filePath, file.base) },
 				);
+
 				metaDataFile = new File({
 					base: file.base,
 					path: filePath + NLS_METADATA_JSON,
@@ -108,11 +114,13 @@ export function rewriteLocalizeCalls(): ThroughStream {
 				});
 			}
 		}
+
 		this.queue(file);
 
 		if (messagesFile) {
 			this.queue(messagesFile);
 		}
+
 		if (metaDataFile) {
 			this.queue(metaDataFile);
 		}
@@ -133,6 +141,7 @@ export function createMetaDataFiles(): ThroughStream {
 			result.errors.forEach((error) =>
 				console.error(`${file.relative}${error}`),
 			);
+
 			this.emit("error", `Failed to rewrite file: ${file.path}`);
 
 			return;
@@ -146,6 +155,7 @@ export function createMetaDataFiles(): ThroughStream {
 			let ext = path.extname(file.path);
 
 			let filePath = file.path.substr(0, file.path.length - ext.length);
+
 			this.queue(
 				new File({
 					base: file.base,
@@ -162,6 +172,7 @@ export function createMetaDataFiles(): ThroughStream {
 				result.bundle,
 				{ filePath: removePathPrefix(filePath, file.base) },
 			);
+
 			this.queue(
 				new File({
 					base: file.base,
@@ -194,6 +205,7 @@ export function bundleMetaDataFiles(id: string, outDir: string): ThroughStream {
 
 				return;
 			}
+
 			if (file.isBuffer()) {
 				if (!base) {
 					base = file.base;
@@ -203,19 +215,23 @@ export function bundleMetaDataFiles(id: string, outDir: string): ThroughStream {
 
 				return;
 			}
+
 			if (!base) {
 				base = file.base;
 			}
+
 			const buffer: Buffer = file.contents as Buffer;
 
 			const json: SingleMetaDataFile = JSON.parse(
 				buffer.toString("utf8"),
 			);
+
 			bundler.add(json);
 		},
 		function () {
 			if (base) {
 				const [header, content] = bundler.bundle();
+
 				this.queue(
 					new File({
 						base: base,
@@ -223,6 +239,7 @@ export function bundleMetaDataFiles(id: string, outDir: string): ThroughStream {
 						contents: new Buffer(JSON.stringify(header), "utf8"),
 					}),
 				);
+
 				this.queue(
 					new File({
 						base: base,
@@ -231,6 +248,7 @@ export function bundleMetaDataFiles(id: string, outDir: string): ThroughStream {
 					}),
 				);
 			}
+
 			this.queue(null);
 		},
 	);
@@ -261,6 +279,7 @@ export function createAdditionalLanguageFiles(
 		if (!isAffected) {
 			return;
 		}
+
 		const filename = isPackageFile
 			? file.relative.substr(0, file.relative.length - ".nls.json".length)
 			: file.relative.substr(
@@ -272,9 +291,11 @@ export function createAdditionalLanguageFiles(
 
 		if (file.isBuffer()) {
 			const buffer: Buffer = file.contents as Buffer;
+
 			json = JSON.parse(buffer.toString("utf8"));
 
 			const resolvedBundle = resolveMessageBundle(json);
+
 			languages.forEach((language) => {
 				const folderName = language.folderName || language.id;
 
@@ -293,6 +314,7 @@ export function createAdditionalLanguageFiles(
 				) {
 					result.problems.forEach((problem) => log(problem));
 				}
+
 				if (result.messages) {
 					this.queue(
 						new File({
@@ -332,8 +354,10 @@ interface ExtensionLanguageBundle {
 export function bundleLanguageFiles(): ThroughStream {
 	interface MapValue {
 		base: string;
+
 		content: ExtensionLanguageBundle;
 	}
+
 	const bundles: Map<MapValue> = Object.create(null);
 
 	function getModuleKey(relativeFile: string): string {
@@ -354,6 +378,7 @@ export function bundleLanguageFiles(): ThroughStream {
 
 				return;
 			}
+
 			const language = matches[1] ? matches[1] : "en";
 
 			let bundle = bundles[language];
@@ -363,8 +388,10 @@ export function bundleLanguageFiles(): ThroughStream {
 					base: file.base,
 					content: Object.create(null),
 				};
+
 				bundles[language] = bundle;
 			}
+
 			bundle.content[getModuleKey(file.relative)] = JSON.parse(
 				(file.contents as Buffer).toString("utf8"),
 			);
@@ -386,8 +413,10 @@ export function bundleLanguageFiles(): ThroughStream {
 						"utf8",
 					),
 				});
+
 				this.queue(file);
 			}
+
 			this.queue(null);
 		},
 	);
@@ -396,6 +425,7 @@ export function bundleLanguageFiles(): ThroughStream {
 export function debug(prefix: string = ""): ThroughStream {
 	return through(function (this: ThroughStream, file: File) {
 		console.log(`${prefix}In pipe ${file.path}`);
+
 		this.queue(file);
 	});
 }
@@ -421,6 +451,7 @@ export function createKeyValuePairFile(
 
 			return;
 		}
+
 		let kvpFile: File | undefined;
 
 		const filename = file.relative.substr(
@@ -444,10 +475,12 @@ export function createKeyValuePairFile(
 
 					return;
 				}
+
 				const kvpObject = bundle2keyValuePair(
 					resolvedBundle,
 					commentSeparator,
 				);
+
 				kvpFile = new File({
 					base: file.base,
 					path: path.join(file.base, filename) + I18N_JSON,
@@ -472,6 +505,7 @@ export function createKeyValuePairFile(
 
 			return;
 		}
+
 		this.queue(file);
 
 		if (kvpFile) {
@@ -482,12 +516,15 @@ export function createKeyValuePairFile(
 
 interface Item {
 	id: string;
+
 	message: string;
+
 	comment?: string;
 }
 
 interface PackageJsonMessageFormat {
 	message: string;
+
 	comment: string[];
 }
 
@@ -500,6 +537,7 @@ module PackageJsonFormat {
 		if (Is.undef(value) || !Is.object(value)) {
 			return false;
 		}
+
 		return Object.keys(value).every((key) => {
 			let element = value[key];
 
@@ -519,6 +557,7 @@ namespace MessageInfo {
 	export function message(value: MessageInfo): string {
 		return typeof value === "string" ? value : value.message;
 	}
+
 	export function comment(value: MessageInfo): string[] | undefined {
 		return typeof value === "string" ? undefined : value.comment;
 	}
@@ -546,21 +585,26 @@ export class Line {
 
 export interface Resource {
 	name: string;
+
 	project: string;
 }
 
 export interface ParsedXLF {
 	messages: Map<string>;
+
 	originalFilePath: string;
+
 	language: string;
 }
 
 export class XLF {
 	private buffer: string[];
+
 	private files: Map<Item[]>;
 
 	constructor(public project: string) {
 		this.buffer = [];
+
 		this.files = Object.create(null);
 	}
 
@@ -576,6 +620,7 @@ export class XLF {
 			for (const item of this.files[file]) {
 				this.addStringItem(item);
 			}
+
 			this.appendNewLine("</body></file>", 2);
 		}
 
@@ -588,6 +633,7 @@ export class XLF {
 		if (keys.length === 0) {
 			return;
 		}
+
 		if (keys.length !== messages.length) {
 			throw new Error(
 				`Un-matching keys(${keys.length}) and messages(${messages.length}).`,
@@ -606,6 +652,7 @@ export class XLF {
 			if (existingKeys.has(key)) {
 				continue;
 			}
+
 			existingKeys.add(key);
 
 			const messageInfo = messages[i];
@@ -618,6 +665,7 @@ export class XLF {
 				if (comments === undefined) {
 					return undefined;
 				}
+
 				return comments
 					.map((comment) => encodeEntities(comment))
 					.join(`\r\n`);
@@ -637,6 +685,7 @@ export class XLF {
 		}
 
 		this.appendNewLine(`<trans-unit id="${item.id}">`, 4);
+
 		this.appendNewLine(`<source xml:lang="en">${item.message}</source>`, 6);
 
 		if (item.comment) {
@@ -648,6 +697,7 @@ export class XLF {
 
 	private appendHeader(): void {
 		this.appendNewLine('<?xml version="1.0" encoding="utf-8"?>', 0);
+
 		this.appendNewLine(
 			'<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">',
 			0,
@@ -660,7 +710,9 @@ export class XLF {
 
 	private appendNewLine(content: string, indent?: number): void {
 		const line = new Line(indent);
+
 		line.append(content);
+
 		this.buffer.push(line.toString());
 	}
 
@@ -672,20 +724,25 @@ export class XLF {
 			if (typeof target === "string") {
 				return target;
 			}
+
 			if (typeof target._ === "string") {
 				return target._;
 			}
+
 			if (Array.isArray(target) && target.length === 1) {
 				const item = target[0];
 
 				if (typeof item === "string") {
 					return item;
 				}
+
 				if (typeof item._ === "string") {
 					return item._;
 				}
+
 				return target[0]._;
 			}
+
 			return undefined;
 		};
 
@@ -694,7 +751,9 @@ export class XLF {
 
 			const files: {
 				messages: Map<string>;
+
 				originalFilePath: string;
+
 				language: string;
 			}[] = [];
 
@@ -723,6 +782,7 @@ export class XLF {
 							),
 						);
 					}
+
 					const language = file.$["target-language"].toLowerCase();
 
 					if (!language) {
@@ -786,8 +846,10 @@ export function createXlfFiles(
 		if (!_xlf) {
 			_xlf = new XLF(projectName);
 		}
+
 		return _xlf;
 	}
+
 	return through(
 		function (this: ThroughStream, file: File) {
 			if (!file.isBuffer()) {
@@ -795,6 +857,7 @@ export function createXlfFiles(
 
 				return;
 			}
+
 			const buffer: Buffer = file.contents as Buffer;
 
 			const basename = path.basename(file.path);
@@ -844,13 +907,16 @@ export function createXlfFiles(
 					);
 				}
 			}
+
 			if (_xlf) {
 				const xlfFile = new File({
 					path: path.join(projectName, extensionName + ".xlf"),
 					contents: new Buffer(_xlf.toString(), "utf8"),
 				});
+
 				this.queue(xlfFile);
 			}
+
 			this.queue(null);
 		},
 	);
@@ -864,16 +930,19 @@ export function prepareJsonFiles(): ThroughStream {
 			let stream = this;
 
 			let parsePromise = XLF.parse(xlf.contents!.toString());
+
 			parsePromises.push(parsePromise);
 
 			parsePromise.then(function (resolvedFiles) {
 				resolvedFiles.forEach((file) => {
 					let messages = file.messages,
 						translatedFile;
+
 					translatedFile = createI18nFile(
 						file.originalFilePath,
 						messages,
 					);
+
 					stream.queue(translatedFile);
 				});
 			});
@@ -934,6 +1003,7 @@ function encodeEntities(value: string): string {
 				result.push(ch);
 		}
 	}
+
 	return result.join("");
 }
 

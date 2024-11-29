@@ -28,6 +28,7 @@ export class NLSBundlePlugin {
 				const json = JSON.parse(
 					compilation.assets[name].source().toString("utf8"),
 				);
+
 				bundler.add(json);
 			}
 

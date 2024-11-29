@@ -49,13 +49,16 @@ argv._.forEach((element) => {
 	if (typeof element === "number") {
 		return;
 	}
+
 	glob(element, (err, matches) => {
 		if (err) {
 			console.error(err.message);
+
 			hasError = true;
 
 			return;
 		}
+
 		matches.forEach((file) => {
 			const resolvedFile = path.resolve(file);
 
@@ -78,8 +81,10 @@ argv._.forEach((element) => {
 					console.error(
 						`${file}: protocol or host based source map URLs are not supported.`,
 					);
+
 					hasError = true;
 				}
+
 				const pathname = sourceMapUrl.pathname;
 
 				if (pathname) {
@@ -87,12 +92,14 @@ argv._.forEach((element) => {
 						resolvedSourceMapFile = pathname;
 					} else {
 						sourceMapFile = pathname;
+
 						resolvedSourceMapFile = path.join(
 							path.dirname(file),
 							sourceMapFile,
 						);
 					}
 				}
+
 				if (
 					resolvedSourceMapFile &&
 					fs.existsSync(resolvedSourceMapFile)
@@ -120,6 +127,7 @@ argv._.forEach((element) => {
 				result.errors.forEach((error) =>
 					console.error(`${file}${error}`),
 				);
+
 				hasError = true;
 			} else {
 				let outFile = resolvedFile;
@@ -138,31 +146,37 @@ argv._.forEach((element) => {
 					} else {
 						outFile = path.join(outDir, file);
 					}
+
 					if (sourceMapFile) {
 						sourceMapOutFile = path.join(outDir, sourceMapFile);
 					}
 				}
+
 				if (result.contents) {
 					const dirname = path.dirname(outFile);
 
 					if (!fs.existsSync(dirname)) {
 						fs.mkdirSync(path.dirname(outFile));
 					}
+
 					fs.writeFileSync(outFile, result.contents, {
 						encoding: "utf8",
 					});
 				}
+
 				if (sourceMapOutFile && result.sourceMap) {
 					fs.writeFileSync(sourceMapOutFile, result.sourceMap, {
 						encoding: "utf8",
 					});
 				}
+
 				if (result.bundle) {
 					const extension = path.extname(outFile);
 
 					const bundledFile =
 						outFile.substr(0, outFile.length - extension.length) +
 						".nls.json";
+
 					fs.writeFileSync(
 						bundledFile,
 						JSON.stringify(result.bundle, null, 4),

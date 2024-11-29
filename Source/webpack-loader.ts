@@ -48,6 +48,7 @@ module.exports = function (this: any, content: any, map: any, meta: any) {
 		};
 
 		// this.emitFile(`${base}.nls.json`, JSON.stringify(result.bundle.messages, null, '\t'), 'utf8');
+
 		this.emitFile(
 			`${base}.nls.metadata.json`,
 			JSON.stringify(metaDataContent, null, "\t"),

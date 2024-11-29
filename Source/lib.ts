@@ -23,6 +23,7 @@ export interface Map<V> {
 
 class SingleFileServiceHost implements ts.LanguageServiceHost {
 	private file: ts.IScriptSnapshot;
+
 	private lib: ts.IScriptSnapshot;
 
 	constructor(
@@ -31,6 +32,7 @@ class SingleFileServiceHost implements ts.LanguageServiceHost {
 		contents: string,
 	) {
 		this.file = ts.ScriptSnapshot.fromString(contents);
+
 		this.lib = ts.ScriptSnapshot.fromString("");
 	}
 
@@ -46,22 +48,27 @@ class SingleFileServiceHost implements ts.LanguageServiceHost {
 	getCurrentDirectory = () => "";
 
 	getDefaultLibFileName = () => "lib.d.ts";
+
 	fileExists = () => true;
+
 	readFile = () => "";
 }
 
 interface Span {
 	start: ts.LineAndCharacter;
+
 	end: ts.LineAndCharacter;
 }
 
 interface Patch {
 	span: Span;
+
 	content: string;
 }
 
 export interface LocalizeInfo {
 	key: string;
+
 	comment: string[];
 }
 
@@ -83,6 +90,7 @@ export namespace KeyInfo {
 	export function key(value: KeyInfo): string {
 		return isString(value) ? value : value.key;
 	}
+
 	export function comment(value: KeyInfo): string[] | undefined {
 		return isString(value) ? undefined : value.comment;
 	}
@@ -90,6 +98,7 @@ export namespace KeyInfo {
 
 export interface JavaScriptMessageBundle {
 	messages: string[];
+
 	keys: KeyInfo[];
 }
 
@@ -107,7 +116,9 @@ export namespace JavaScriptMessageBundle {
 
 export interface ResolvedJavaScriptMessageBundle {
 	messages: string[];
+
 	keys: string[];
+
 	map: Map<string>;
 }
 
@@ -122,12 +133,14 @@ export namespace ResolvedJavaScriptMessageBundle {
 			candidate.map !== undefined
 		);
 	}
+
 	export function asTranslatedMessages(
 		bundle: ResolvedJavaScriptMessageBundle,
 		translatedMessages: Map<string> | undefined,
 		problems: string[],
 	): string[] {
 		const result: string[] = [];
+
 		bundle.keys.forEach((key) => {
 			let translated = translatedMessages
 				? translatedMessages[key]
@@ -137,8 +150,10 @@ export namespace ResolvedJavaScriptMessageBundle {
 				if (translatedMessages) {
 					problems.push(`No localized message found for key ${key}`);
 				}
+
 				translated = bundle.map[key];
 			}
+
 			result.push(translated);
 		});
 
@@ -157,6 +172,7 @@ export namespace PackageJsonMessageBundle {
 		problems: string[],
 	): Map<string> {
 		const result: Map<string> = Object.create(null);
+
 		Object.keys(bundle).forEach((key) => {
 			let message = translatedMessages
 				? translatedMessages[key]
@@ -166,8 +182,10 @@ export namespace PackageJsonMessageBundle {
 				if (translatedMessages) {
 					problems.push(`No localized message found for key ${key}`);
 				}
+
 				message = bundle[key];
 			}
+
 			result[key] = message;
 		});
 
@@ -177,19 +195,25 @@ export namespace PackageJsonMessageBundle {
 
 interface AnalysisResult {
 	patches: Patch[];
+
 	errors: string[];
+
 	bundle: JavaScriptMessageBundle;
 }
 
 interface MappingItem extends BaseMappingItem {
 	delete?: boolean;
+
 	columnDelta?: number;
+
 	lineDelta?: number;
 }
 
 interface Line {
 	content: string | null;
+
 	ending: string;
+
 	mappings: MappingItem[] | null;
 }
 
@@ -220,6 +244,7 @@ class TextModel {
 				ending: match[0],
 				mappings: null,
 			});
+
 			index = regex.lastIndex;
 		}
 
@@ -230,8 +255,10 @@ class TextModel {
 				mappings: null,
 			});
 		}
+
 		if (rawSourceMap) {
 			const sourceMapConsumer = new SourceMapConsumer(rawSourceMap);
+
 			sourceMapConsumer.eachMapping(
 				(mapping) => {
 					// Note that the generatedLine index is one based;
@@ -242,6 +269,7 @@ class TextModel {
 						if (!line.mappings) {
 							line.mappings = [];
 						}
+
 						line.mappings.push(mapping);
 					}
 				},
@@ -294,9 +322,11 @@ class TextModel {
 				}
 			}
 		}
+
 		if (overlapping) {
 			throw new Error(`Overlapping text edits generated.`);
 		}
+
 		const lastPatch = patches[patches.length - 1];
 
 		const lastLine = this.lines[this.lineCount - 1];
@@ -311,8 +341,10 @@ class TextModel {
 
 		let mappingCursor: {
 			line: number;
+
 			index: number;
 		} = { line: -1, index: -1 };
+
 		patches.reverse().forEach((patch) => {
 			const startLineNumber = patch.span.start.line;
 
@@ -341,10 +373,12 @@ class TextModel {
 						mappingCursor.line !== startLineNumber
 					) {
 						mappingCursor.line = startLineNumber;
+
 						mappingCursor.index = startLine.mappings
 							? startLine.mappings.length - 1
 							: -1;
 					}
+
 					let delta =
 						patch.content.length -
 						(patch.span.end.character - patch.span.start.character);
@@ -365,12 +399,14 @@ class TextModel {
 							// The patch covers the source mapping. Delete it
 							mappingItem.delete = true;
 						}
+
 						mappingCursor.index--;
 					}
 					// Record the delta on the first source marker after the patch.
 					if (mappingCursor.index + 1 < startLine.mappings!.length) {
 						let mapping =
 							startLine.mappings![mappingCursor.index + 1];
+
 						mapping.columnDelta =
 							(mapping.columnDelta || 0) + delta;
 					}
@@ -380,14 +416,17 @@ class TextModel {
 					if (startLineMappings) {
 						for (
 							let i = startLineMappings.length - 1;
+
 							i >= 0 &&
 							startLineMappings[i].generatedColumn >
 								patch.span.start.character;
+
 							i--
 						) {
 							startLineMappings[i].delete = true;
 						}
 					}
+
 					for (let i = startLineNumber + 1; i < endLineNumber; i++) {
 						let line = this.lines[i];
 
@@ -397,6 +436,7 @@ class TextModel {
 							);
 						}
 					}
+
 					let endLineMappings = endLine.mappings;
 
 					if (endLineMappings) {
@@ -416,9 +456,12 @@ class TextModel {
 								break;
 							}
 						}
+
 						if (index < endLineMappings.length) {
 							let mapping = endLineMappings[index];
+
 							mapping.lineDelta = lineDelta;
+
 							mapping.columnDelta =
 								patch.span.start.character -
 								patch.span.end.character +
@@ -434,11 +477,13 @@ class TextModel {
 		if (!this.rawSourceMap) {
 			return undefined;
 		}
+
 		const sourceMapGenerator = new SourceMapGenerator({
 			sourceRoot: this.rawSourceMap.sourceRoot,
 		});
 
 		let lineDelta = 0;
+
 		this.lines.forEach((line) => {
 			const mappings = line.mappings;
 
@@ -447,11 +492,13 @@ class TextModel {
 			if (mappings) {
 				mappings.forEach((mapping) => {
 					lineDelta = (mapping.lineDelta || 0) + lineDelta;
+
 					columnDelta = (mapping.columnDelta || 0) + columnDelta;
 
 					if (mapping.delete) {
 						return;
 					}
+
 					sourceMapGenerator.addMapping({
 						source: mapping.source,
 						name: mapping.name,
@@ -483,6 +530,7 @@ class TextModel {
 				buffer.push(line.content + line.ending);
 			}
 		}
+
 		return buffer.join("");
 	}
 }
@@ -546,6 +594,7 @@ function analyze(
 				vscodeRegExp.test(node.moduleReference.expression.getText())
 			);
 		}
+
 		return false;
 	}
 
@@ -561,6 +610,7 @@ function analyze(
 		) {
 			return false;
 		}
+
 		const argument = node.arguments[0];
 
 		return (
@@ -581,13 +631,16 @@ function analyze(
 			if (node.pos === textSpan.start && length === textSpan.length) {
 				return node;
 			}
+
 			if (node.pos <= textSpan.start && textSpanEnd <= node.end) {
 				const candidate = ts.forEachChild(node, loop);
 
 				return candidate || node;
 			}
+
 			return undefined;
 		}
+
 		return loop(node);
 	}
 
@@ -614,19 +667,24 @@ function analyze(
 
 					if (replace !== undefined) {
 						result.push(replace);
+
 						i++;
 
 						continue;
 					}
 				}
 			}
+
 			result.push(ch);
 		}
+
 		return result.join("");
 	}
 
 	options = clone(options, false);
+
 	options.noResolve = true;
+
 	options.allowJs = true;
 
 	const filename = "file.js";
@@ -663,6 +721,7 @@ function analyze(
 			) {
 				parent = node.parent.parent;
 			}
+
 			if (ts.isVariableDeclaration(parent)) {
 				references = service.getReferencesAtPosition(
 					filename,
@@ -716,6 +775,7 @@ function analyze(
 			) {
 				return memo;
 			}
+
 			const callExpression = node.parent.parent;
 
 			const expression = callExpression.expression;
@@ -723,6 +783,7 @@ function analyze(
 			if (ts.isPropertyAccessExpression(expression)) {
 				if (expression.name.text === "loadMessageBundle") {
 					// We have a load call like nls.loadMessageBundle();
+
 					memo.push(callExpression);
 				} else if (expression.name.text === "config") {
 					// We have a load call like nls.config({...})();
@@ -737,6 +798,7 @@ function analyze(
 					}
 				}
 			}
+
 			return memo;
 		},
 		[],
@@ -748,6 +810,7 @@ function analyze(
 
 			if (ts.isCallExpression(parent)) {
 				// We have something like nls.config({...})()('key', 'message');
+
 				memo.push(parent);
 			} else if (ts.isVariableDeclaration(parent)) {
 				// We have something like var localize = nls.config({...})();
@@ -780,6 +843,7 @@ function analyze(
 												sourceFile,
 												node.pos,
 											);
+
 										errors.push(
 											`(${position.line + 1},${position.character + 1}): localize function (bound to ${node.text}) used in an unusual way.`,
 										);
@@ -790,6 +854,7 @@ function analyze(
 					});
 				}
 			}
+
 			return memo;
 		},
 		[],
@@ -800,6 +865,7 @@ function analyze(
 			const args = loadCall.arguments;
 
 			const dir = baseDir ? JSON.stringify(baseDir) : "__dirname";
+
 			patches.push({
 				span: {
 					start: ts.getLineAndCharacterOfPosition(
@@ -813,10 +879,12 @@ function analyze(
 					: "__filename",
 			});
 		}
+
 		return memo;
 	}, patches);
 
 	let messageIndex = 0;
+
 	localizeCalls.reduce(
 		(memo, localizeCall) => {
 			const firstArg = localizeCall.arguments[0];
@@ -833,6 +901,7 @@ function analyze(
 
 			if (ts.isStringLiteralLike(firstArg)) {
 				text = firstArg.getText();
+
 				key = text.substr(1, text.length - 2);
 			} else if (ts.isObjectLiteralExpression(firstArg)) {
 				for (let i = 0; i < firstArg.properties.length; i++) {
@@ -846,6 +915,7 @@ function analyze(
 
 							if (ts.isStringLiteralLike(initializer)) {
 								text = initializer.getText();
+
 								key = text.substr(1, text.length - 2);
 							}
 						} else if (name === "comment") {
@@ -855,6 +925,7 @@ function analyze(
 								initializer.elements.forEach((element) => {
 									if (ts.isStringLiteralLike(element)) {
 										text = element.getText();
+
 										comment.push(
 											text.substr(1, text.length - 2),
 										);
@@ -865,33 +936,41 @@ function analyze(
 					}
 				}
 			}
+
 			if (!key) {
 				const position = ts.getLineAndCharacterOfPosition(
 					sourceFile,
 					firstArg.pos,
 				);
+
 				errors.push(
 					`(${position.line + 1},${position.character + 1}): first argument of a localize call must either be a string literal or an object literal of type LocalizeInfo.`,
 				);
 
 				return memo;
 			}
+
 			if (ts.isStringLiteralLike(secondArg)) {
 				const text = secondArg.getText();
+
 				message = text.substr(1, text.length - 2);
 			}
+
 			if (!message) {
 				const position = ts.getLineAndCharacterOfPosition(
 					sourceFile,
 					secondArg.pos,
 				);
+
 				errors.push(
 					`(${position.line + 1},${position.character + 1}): second argument of a localize call must be a string literal.`,
 				);
 
 				return memo;
 			}
+
 			message = unescapeString(message);
+
 			memo.patches.push({
 				span: {
 					start: ts.getLineAndCharacterOfPosition(
@@ -905,6 +984,7 @@ function analyze(
 				},
 				content: messageIndex.toString(),
 			});
+
 			memo.patches.push({
 				span: {
 					start: ts.getLineAndCharacterOfPosition(
@@ -918,6 +998,7 @@ function analyze(
 				},
 				content: "null",
 			});
+
 			bundle.messages.push(message);
 
 			if (comment.length > 0) {
@@ -928,6 +1009,7 @@ function analyze(
 			} else {
 				bundle.keys.push(key);
 			}
+
 			messageIndex++;
 
 			return memo;
@@ -949,8 +1031,11 @@ export function processFile(
 	sourceMap?: string | RawSourceMap,
 ): {
 	contents?: string;
+
 	sourceMap?: string;
+
 	bundle?: JavaScriptMessageBundle;
+
 	errors: string[];
 } {
 	const analysisResult = analyze(contents, relativeFileName, baseDir);
@@ -963,6 +1048,7 @@ export function processFile(
 			errors: analysisResult.errors,
 		};
 	}
+
 	let rawSourceMap: RawSourceMap | undefined = undefined;
 
 	if (isString(sourceMap)) {
@@ -974,6 +1060,7 @@ export function processFile(
 	}
 
 	const textModel = new TextModel(contents, rawSourceMap);
+
 	textModel.apply(analysisResult.patches);
 
 	return {
@@ -1032,12 +1119,16 @@ export function resolveMessageBundle(
 		if (bundle.messages.length !== bundle.keys.length) {
 			return null;
 		}
+
 		const keys: string[] = [];
 
 		const map: Map<string> = Object.create(null);
+
 		bundle.keys.forEach((key, index) => {
 			const resolvedKey = isString(key) ? key : key.key;
+
 			keys.push(resolvedKey);
+
 			map[resolvedKey] = bundle.messages[index];
 		});
 
@@ -1049,6 +1140,7 @@ export function resolveMessageBundle(
 
 export interface LocalizedMessagesResult {
 	messages: string[] | Map<string>;
+
 	problems: string[];
 }
 
@@ -1075,6 +1167,7 @@ export function createLocalizedMessages(
 
 	if (fs.existsSync(i18nFile)) {
 		const content = stripComments(fs.readFileSync(i18nFile, "utf8"));
+
 		messages = JSON.parse(content) as Map<string>;
 
 		if (Object.keys(messages).length === 0) {
@@ -1083,6 +1176,7 @@ export function createLocalizedMessages(
 					`Message file ${i18nFile.substr(i18nBaseDir.length + 1)} is empty. Missing messages: ${bundleLength}`,
 				);
 			}
+
 			messages = undefined;
 		}
 	} else {
@@ -1109,13 +1203,16 @@ export function createLocalizedMessages(
 			problems,
 		);
 	}
+
 	if (problems.length > 0) {
 		problems.unshift(
 			`Generating localized messages for '${languageFolderName}' resulted in the following problems:`,
 			"",
 		);
+
 		problems.push("", "");
 	}
+
 	return { messages: translatedMessages, problems };
 }
 
@@ -1134,6 +1231,7 @@ export function bundle2keyValuePair(
 
 		if (LocalizeInfo.is(keyInfo)) {
 			key = keyInfo.key;
+
 			comments = keyInfo.comment;
 		} else {
 			key = keyInfo;
@@ -1163,9 +1261,11 @@ export function removePathPrefix(path: string, prefix: string): string {
 	if (!prefix) {
 		return path;
 	}
+
 	if (!path.startsWith(prefix)) {
 		return path;
 	}
+
 	const ch = prefix.charAt(prefix.length - 1);
 
 	if (ch === "/" || ch === "\\") {
@@ -1177,19 +1277,25 @@ export function removePathPrefix(path: string, prefix: string): string {
 
 export interface SingleMetaDataFile {
 	messages: string[];
+
 	keys: KeyInfo[];
+
 	filePath: string;
 }
 
 export interface BundledMetaDataEntry {
 	messages: string[];
+
 	keys: KeyInfo[];
 }
 
 export interface BundledMetaDataHeader {
 	id: string;
+
 	type: string;
+
 	hash: string;
+
 	outDir: string;
 }
 
@@ -1238,10 +1344,12 @@ export class MetaDataBundler {
 					md5.update(keyInfo.key);
 				}
 			}
+
 			for (let message of entry.messages) {
 				md5.update(message);
 			}
 		}
+
 		const hash = md5.digest("hex");
 
 		const header: BundledMetaDataHeader = {
