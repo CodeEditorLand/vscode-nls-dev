@@ -23,7 +23,7 @@
 		"@types/glob": "8.1.0",
 		"@types/iconv-lite": "0.0.1",
 		"@types/minimatch": "5.1.2",
-		"@types/node": "22.10.0",
+		"@types/node": "22.10.1",
 		"@types/source-map": "0.5.7",
 		"@types/through": "0.0.33",
 		"@types/vinyl": "2.0.12",
