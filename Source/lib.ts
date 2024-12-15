@@ -416,11 +416,9 @@ class TextModel {
 					if (startLineMappings) {
 						for (
 							let i = startLineMappings.length - 1;
-
 							i >= 0 &&
 							startLineMappings[i].generatedColumn >
 								patch.span.start.character;
-
 							i--
 						) {
 							startLineMappings[i].delete = true;
